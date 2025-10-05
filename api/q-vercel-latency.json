@@ -1,0 +1,32 @@
+[
+  {
+    "region": "emea",
+    "latency_ms": 150,
+    "uptime_pct": 99.5
+  },
+  {
+    "region": "emea",
+    "latency_ms": 180,
+    "uptime_pct": 99.2
+  },
+  {
+    "region": "apac",
+    "latency_ms": 120,
+    "uptime_pct": 99.8
+  },
+  {
+    "region": "apac",
+    "latency_ms": 200,
+    "uptime_pct": 99.1
+  },
+  {
+    "region": "americas",
+    "latency_ms": 90,
+    "uptime_pct": 99.9
+  },
+  {
+    "region": "americas",
+    "latency_ms": 110,
+    "uptime_pct": 99.7
+  }
+]
