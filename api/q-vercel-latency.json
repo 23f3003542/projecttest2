@@ -10,6 +10,11 @@
     "uptime_pct": 99.2
   },
   {
+    "region": "emea",
+    "latency_ms": 140,
+    "uptime_pct": 99.7
+  },
+  {
     "region": "apac",
     "latency_ms": 120,
     "uptime_pct": 99.8
@@ -20,13 +25,18 @@
     "uptime_pct": 99.1
   },
   {
-    "region": "americas",
+    "region": "amer",
     "latency_ms": 90,
     "uptime_pct": 99.9
   },
   {
-    "region": "americas",
+    "region": "amer",
     "latency_ms": 110,
     "uptime_pct": 99.7
+  },
+  {
+    "region": "amer",
+    "latency_ms": 160,
+    "uptime_pct": 99.5
   }
 ]
