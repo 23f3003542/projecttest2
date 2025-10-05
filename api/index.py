@@ -1,9 +1,7 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-import pandas as pd
-import numpy as np
-from pathlib import Path
 import json
+import os
 
 app = FastAPI()
 
@@ -17,22 +15,43 @@ app.add_middleware(
     expose_headers=["*"],
 )
 
-# Load the dataset once when the app starts
-# The data file should be in the same directory as this script
-DATA_FILE = Path(__file__).parent / "q-vercel-latency.json"
+# Sample data - replace with actual data file loading
+DATA = [
+    {"region": "emea", "latency_ms": 150, "uptime_pct": 99.5},
+    {"region": "emea", "latency_ms": 180, "uptime_pct": 99.2},
+    {"region": "emea", "latency_ms": 140, "uptime_pct": 99.7},
+    {"region": "amer", "latency_ms": 90, "uptime_pct": 99.9},
+    {"region": "amer", "latency_ms": 110, "uptime_pct": 99.7},
+    {"region": "amer", "latency_ms": 160, "uptime_pct": 99.5},
+    {"region": "apac", "latency_ms": 120, "uptime_pct": 99.8},
+    {"region": "apac", "latency_ms": 200, "uptime_pct": 99.1},
+]
 
+# Try to load data from file if available
 try:
-    df = pd.read_json(DATA_FILE)
-except Exception as e:
-    # Fallback data if file not found
-    df = pd.DataFrame([
-        {"region": "emea", "latency_ms": 150, "uptime_pct": 99.5},
-        {"region": "emea", "latency_ms": 180, "uptime_pct": 99.2},
-        {"region": "emea", "latency_ms": 140, "uptime_pct": 99.7},
-        {"region": "amer", "latency_ms": 90, "uptime_pct": 99.9},
-        {"region": "amer", "latency_ms": 110, "uptime_pct": 99.7},
-        {"region": "amer", "latency_ms": 160, "uptime_pct": 99.5},
-    ])
+    import os
+    data_file = os.path.join(os.path.dirname(__file__), "q-vercel-latency.json")
+    if os.path.exists(data_file):
+        with open(data_file, 'r') as f:
+            DATA = json.load(f)
+except:
+    pass  # Use default data
+
+
+def calculate_percentile(values, percentile):
+    """Calculate percentile without numpy"""
+    if not values:
+        return 0
+    sorted_values = sorted(values)
+    n = len(sorted_values)
+    index = (percentile / 100) * (n - 1)
+    
+    if index.is_integer():
+        return sorted_values[int(index)]
+    else:
+        lower = sorted_values[int(index)]
+        upper = sorted_values[int(index) + 1]
+        return lower + (upper - lower) * (index - int(index))
 
 
 @app.get("/")
@@ -50,24 +69,29 @@ async def get_latency_stats(request: Request):
         results = []
 
         for region in regions_to_process:
-            region_df = df[df["region"] == region]
+            # Filter data for this region
+            region_data = [record for record in DATA if record["region"] == region]
 
-            if not region_df.empty:
-                avg_latency = float(round(region_df["latency_ms"].mean(), 2))
-                p95_latency = float(round(np.percentile(region_df["latency_ms"], 95), 2))
-                avg_uptime = float(round(region_df["uptime_pct"].mean(), 3))
-                breaches = int(region_df[region_df["latency_ms"] > threshold].shape[0])
+            if region_data:
+                latencies = [record["latency_ms"] for record in region_data]
+                uptimes = [record["uptime_pct"] for record in region_data]
+                
+                avg_latency = round(sum(latencies) / len(latencies), 2)
+                p95_latency = round(calculate_percentile(latencies, 95), 2)
+                avg_uptime = round(sum(uptimes) / len(uptimes), 3)
+                breaches = len([l for l in latencies if l > threshold])
 
-                results.append(
-                    {
-                        "region": region,
-                        "avg_latency": avg_latency,
-                        "p95_latency": p95_latency,
-                        "avg_uptime": avg_uptime,
-                        "breaches": breaches,
-                    }
-                )
+                results.append({
+                    "region": region,
+                    "avg_latency": avg_latency,
+                    "p95_latency": p95_latency,
+                    "avg_uptime": avg_uptime,
+                    "breaches": breaches,
+                })
 
         return {"regions": results}
     except Exception as e:
         return {"error": str(e), "regions": []}
+
+# Export the app for Vercel
+handler = app
